@@ -9,8 +9,9 @@ export class AutenticacaoService {
 
   constructor() { }
 
-  public cadastrarUsuario(usuario: Usuario): void {
-    firebase.auth().createUserWithEmailAndPassword(usuario.email, usuario.senha)
+  public cadastrarUsuario(usuario: Usuario): Promise<any> {
+    
+    return firebase.auth().createUserWithEmailAndPassword(usuario.email, usuario.senha)
     .then((resposta: any) => {
       
       // remover a senha do atributo senha do objeto usuario
@@ -24,5 +25,11 @@ export class AutenticacaoService {
     .catch((erro: Error) => {
       console.log(erro)
     });
+  }
+
+  public autenticar(email: string, senha: string): void {
+    firebase.auth().signInWithEmailAndPassword(email, senha)
+    .then((resposta: any) => console.log(resposta))
+    .catch((erro: Error) => console.log (erro))
   }
 }
