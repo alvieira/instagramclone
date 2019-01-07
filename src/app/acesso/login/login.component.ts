@@ -9,6 +9,8 @@ import { AutenticacaoService } from 'src/app/autenticacao.service';
 })
 export class LoginComponent implements OnInit {
 
+  public msgErro: string;
+
   @Output() public exibirPainel: EventEmitter<string> = new EventEmitter<string>();
 
   public formulario: FormGroup = new FormGroup({
@@ -26,9 +28,12 @@ export class LoginComponent implements OnInit {
   }
 
   public autenticar(): void {
-   this.autenticacao.autenticar(
-     this.formulario.value.email, 
-     this.formulario.value.senha);
+    this.autenticacao.autenticar(
+      this.formulario.value.email,
+      this.formulario.value.senha)
+      .catch((erro: Error) => {        
+        this.msgErro = erro.message;
+      })    
   }
 
 }
