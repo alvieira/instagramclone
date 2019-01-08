@@ -2,6 +2,7 @@ import * as firebase from 'firebase';
 import { Injectable } from '@angular/core';
 
 import { ProgressoService } from './progresso.service';
+import { resolve, reject } from 'q';
 
 @Injectable({
   providedIn: 'root'
@@ -40,32 +41,48 @@ export class BdService {
       })
   }
 
-  public consultaPublicacoes(emailUsuario: string): any {
+  public consultaPublicacoes(emailUsuario: string): Promise<any> {
 
-    //consultar as publicações (database)
-    firebase.database().ref(`publicacoes/${btoa(emailUsuario)}`)
-      .once('value')
-      .then((snapshot: any) => {
-        // console.log(snapshot.val());
+    return new Promise((resolve, reject) => {
 
-        let publicacoes: Array<any> = [];
+      //consultar as publicações (database)
+      firebase.database().ref(`publicacoes/${btoa(emailUsuario)}`)
+        .orderByKey()
+        .once('value')
+        .then((snapshot: any) => {
+          // console.log(snapshot.val());
 
-        snapshot.forEach((childSnapshot: any) => {
+          let publicacoes: Array<any> = [];
 
-          let publicacao = childSnapshot.val();
+          snapshot.forEach((childSnapshot: any) => {
 
-          //consultar a url da imagem (storage)
-          firebase.storage().ref()
-            .child(`imagens/${childSnapshot.key}`)
-            .getDownloadURL()
-            .then((url: string) => {
+            let publicacao = childSnapshot.val();
 
-              publicacao.url_imagem = url;
+            publicacao.key = childSnapshot.key;
 
-              publicacoes.push(publicacao);
-            })
+            publicacoes.push(publicacao);
+          })          
+          return publicacoes.reverse();
         })
-        console.log(publicacoes);
-      })
+        .then((publicacoes: any) => {
+
+          publicacoes.forEach((publicacao) => {
+            //consultar a url da imagem (storage)
+            firebase.storage().ref()
+              .child(`imagens/${publicacao.key}`)
+              .getDownloadURL()
+              .then((url: string) => {
+                publicacao.url_imagem = url;
+                //consultar o nome do usuário
+                firebase.database().ref(`usuario_detalhe/${btoa(emailUsuario)}`)
+                  .once('value')
+                  .then((snapshot: any) => {
+                    publicacao.nome_usuario = snapshot.val().nome_usuario;                    
+                  })
+              })
+          })
+          resolve(publicacoes);
+        })
+    })
   }
 }
